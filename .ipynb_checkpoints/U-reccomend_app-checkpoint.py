@@ -2,7 +2,7 @@
 import streamlit as st 
 import streamlit.components.v1 as stc
 
-# EDA Pkgs
+# Pkgs
 import pandas as pd
 import numpy as np
 import joblib
