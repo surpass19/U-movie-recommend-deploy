@@ -21,6 +21,7 @@ warnings.filterwarnings('ignore')
 
 # Components Pkgs
 import streamlit.components.v1 as components
+import pickle5
 
 @st.cache
 def load_data():
@@ -51,6 +52,46 @@ def load_data():
         (mergeddf.point, (mergeddf.user_id, mergeddf.movie_id)), shape=(n_users, n_movies)
     )
     movie_new = pd.read_pickle("./data/movie_drop_duplicates.pickle")
+    return movie_pivot, movie_pivot_sparse, movie_new
+
+
+@st.cache
+def load_data_deploy():
+    with open('./data/movie.pickle', "rb") as f:
+        movie = pickle5.load(f)
+    with open('./data_reviews/review0.pickle', "rb") as f:
+        review0_df = pickle5.load(f)
+    with open('./data_reviews/review1.pickle', "rb") as f:
+        review1_df = pickle5.load(f)
+    with open('./data_reviews/review2.pickle', "rb") as f:
+        review2_df = pickle5.load(f)
+    with open('./data_reviews/review3.pickle', "rb") as f:
+        review3_df = pickle5.load(f)
+        
+    ratings = review0_df.append(review1_df).append(review2_df).append(review3_df)
+    
+    movie = movie[movie['number_of_revier'] > 10].reset_index(drop=True)
+    movie = movie.dropna(subset=['mean_review_point', 'number_of_revier'])
+    ratings.point.replace({0: 10}, inplace=True)
+    mergeddf = ratings.merge(movie, left_on = 'movie_id', right_on = 'movie_id', suffixes= ['_user', ''])
+    mergeddf = mergeddf[['user_id','movie_id','point']]
+    mergeddf = mergeddf.drop_duplicates(['user_id','movie_id'])
+    user_enc = LabelEncoder()
+    movie_enc = LabelEncoder()
+    mergeddf["user_id"] = user_enc.fit_transform(mergeddf.user_id)
+    mergeddf["movie_id"] = movie_enc.fit_transform(mergeddf.movie_id)
+    movie_pivot = mergeddf.pivot(index= 'movie_id',columns='user_id',values='point').fillna(0)
+    movie_pivot_sparse = csr_matrix(movie_pivot.values)
+    
+    # create review matrix
+    n_users = mergeddf.user_id.nunique()
+    n_movies = mergeddf.movie_id.nunique()
+    matrix = scipy.sparse.csr_matrix(
+        (mergeddf.point, (mergeddf.user_id, mergeddf.movie_id)), shape=(n_users, n_movies)
+    )
+    with open('./data/movie_drop_duplicates.pickle', "rb") as f:
+        movie_new = pickle5.load(f)
+    
     return movie_pivot, movie_pivot_sparse, movie_new
 
 @st.cache(allow_output_mutation=True)
@@ -254,7 +295,7 @@ def main():
     
     # load data
     #data_load_state = st.text("Loading Data...")
-    movie_pivot, movie_pivot_sparse, df = load_data()
+    movie_pivot, movie_pivot_sparse, df = load_data_deploy()
     #data_load_state.text("Loading Data...Done!")
     
     #-------------------------------------------------------------------#

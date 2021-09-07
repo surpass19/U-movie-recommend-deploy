@@ -5,3 +5,4 @@ numpy==1.21.0
 joblib==1.0.1
 pathlib==1.0.1
 scipy==1.7.0
+pickle5
