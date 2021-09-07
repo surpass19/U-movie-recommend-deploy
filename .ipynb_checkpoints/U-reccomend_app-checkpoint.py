@@ -440,7 +440,7 @@ def main():
         
         # select movies
         selections = st.multiselect(
-            "select movies",
+            "select your favorite movies",
             reversed(df.index.tolist()),
             format_func=lambda x: df.loc[x, "movie_title"],
         )
